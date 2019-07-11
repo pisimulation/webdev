@@ -16,17 +16,18 @@ void main() {
     // Sends commands to debugger attached to the current tab.
     //
     // Extracts the extension backend port from the injected JS.
-    void callback(List<Tab> tabs) {
+    var callback = allowInterop((List<Tab> tabs) {
       currentTab = tabs[0];
-      attach(Debuggee(tabId: currentTab.id), '1.3', allowInterop((e) {}));
+      attach(Debuggee(tabId: currentTab.id), '1.3', allowInterop(() {}));
       sendCommand(Debuggee(tabId: currentTab.id), 'Debugger.enable',
           CommandParams(), allowInterop((e) {}));
       sendCommand(Debuggee(tabId: currentTab.id), 'Runtime.evaluate',
-          CommandParams(expression: '\$extensionPort'), allowInterop((e) {
+          CommandParams(expression: '\$extensionPort'),
+          allowInterop((RemoteObject e) {
         var port = e.result.value;
         startSseClient(port);
       }));
-    }
+    });
 
     queryTabs(query, allowInterop((List tabs) {
       callback(List.from(tabs));
@@ -94,4 +95,16 @@ class CommandParams {
 @anonymous
 class Tab {
   external int get id;
+}
+
+@JS()
+@anonymous
+class RemoteObject {
+  external EvaluationResult get result;
+}
+
+@JS()
+@anonymous
+class EvaluationResult {
+  external dynamic get value;
 }
