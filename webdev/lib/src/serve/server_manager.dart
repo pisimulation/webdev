@@ -15,11 +15,15 @@ class ServerManager {
 
   ServerManager._(this.servers);
 
-  static Future<ServerManager> start(Set<ServerOptions> serverOptions,
-      Stream<BuildResults> buildResults, DevTools devTools) async {
+  static Future<ServerManager> start(
+      Set<ServerOptions> serverOptions,
+      Stream<BuildResults> buildResults,
+      DevTools devTools,
+      int extensionPort) async {
     var servers = Set<WebDevServer>();
     for (var options in serverOptions) {
-      servers.add(await WebDevServer.start(options, buildResults, devTools));
+      servers.add(await WebDevServer.start(
+          options, buildResults, devTools, extensionPort));
     }
     return ServerManager._(servers);
   }

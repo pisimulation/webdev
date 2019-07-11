@@ -85,8 +85,11 @@ class Chrome {
   ///
   /// Each url in [urls] will be loaded in a separate tab.
   static Future<Chrome> start(List<String> urls, {int port}) async {
+    print("PI: [chrome.dart] start chrome with remote debug port enabled");
+    print(urls); //PI
     var dataDir = Directory.systemTemp.createTempSync();
     port = port == null || port == 0 ? await findUnusedPort() : port;
+    print(port); //PI
     var args = [
       // Using a tmp directory ensures that a new instance of chrome launches
       // allowing for the remote debug port to be enabled.

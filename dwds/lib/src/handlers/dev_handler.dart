@@ -81,6 +81,7 @@ class DevHandler {
   // a getter and is created immediately.
   Future<DebugService> startDebugService(
       ChromeConnection chromeConnection, String appInstanceId) async {
+    print("PI: dev_handler calling startDebugService");
     return DebugService.start(
       _hostname,
       chromeConnection,
