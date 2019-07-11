@@ -45,18 +45,18 @@ class Dwds {
     return DebugConnection(appDebugServices);
   }
 
-  static Future<Dwds> start({
-    @required String hostname,
-    @required int applicationPort,
-    @required int assetServerPort,
-    @required String applicationTarget,
-    @required ReloadConfiguration reloadConfiguration,
-    @required Stream<BuildResult> buildResults,
-    @required ConnectionProvider chromeConnection,
-    @required bool serveDevTools,
-    @required LogWriter logWriter,
-    @required bool verbose,
-  }) async {
+  static Future<Dwds> start(
+      {@required String hostname,
+      @required int applicationPort,
+      @required int assetServerPort,
+      @required String applicationTarget,
+      @required ReloadConfiguration reloadConfiguration,
+      @required Stream<BuildResult> buildResults,
+      @required ConnectionProvider chromeConnection,
+      @required bool serveDevTools,
+      @required LogWriter logWriter,
+      @required bool verbose,
+      @required int extensionPort}) async {
     var assetHandler = AssetHandler(
       assetServerPort,
       applicationTarget,
@@ -66,8 +66,8 @@ class Dwds {
     var cascade = Cascade();
     var pipeline = const Pipeline();
 
-    pipeline =
-        pipeline.addMiddleware(createInjectedHandler(reloadConfiguration));
+    pipeline = pipeline.addMiddleware(
+        createInjectedHandler(reloadConfiguration, extensionPort));
 
     DevTools devTools;
     if (serveDevTools) {

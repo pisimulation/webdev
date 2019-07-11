@@ -64,12 +64,11 @@ Future<Chrome> _startChrome(
 }
 
 Future<ServerManager> _startServerManager(
-  Configuration configuration,
-  Map<String, int> targetPorts,
-  String workingDirectory,
-  BuildDaemonClient client,
-  //int extensionPort
-) async {
+    Configuration configuration,
+    Map<String, int> targetPorts,
+    String workingDirectory,
+    BuildDaemonClient client,
+    int extensionPort) async {
   var assetPort = daemonPort(workingDirectory);
   var serverOptions = Set<ServerOptions>();
   for (var target in targetPorts.keys) {
@@ -82,7 +81,7 @@ Future<ServerManager> _startServerManager(
   }
   logWriter(logging.Level.INFO, 'Starting resource servers...');
   var serverManager = await ServerManager.start(
-      serverOptions, client.buildResults); //, extensionPort);
+      serverOptions, client.buildResults, extensionPort); //, extensionPort);
 
   for (var server in serverManager.servers) {
     logWriter(
@@ -94,18 +93,18 @@ Future<ServerManager> _startServerManager(
   return serverManager;
 }
 
-// Future<ExtensionBackend> _startExtensionBackend(
-//     Configuration configuration) async {
-//   if (configuration.debugExtension) {
-//     var extension = await ExtensionBackend.start();
-//     logWriter(
-//         logging.Level.INFO,
-//         'Serving debug extension backend at '
-//         'http://${extension.hostname}:${extension.port}\n');
-//     return extension;
-//   }
-//   return null;
-// }
+Future<ExtensionBackend> _startExtensionBackend(
+    Configuration configuration) async {
+  if (configuration.debugExtension) {
+    var extension = await ExtensionBackend.start();
+    logWriter(
+        logging.Level.INFO,
+        'Serving debug extension backend at '
+        'http://${extension.hostname}:${extension.port}\n');
+    return extension;
+  }
+  return null;
+}
 
 void _registerBuildTargets(
   BuildDaemonClient client,
@@ -156,11 +155,7 @@ class DevWorkflow {
   final _wrapWidth = stdout.hasTerminal ? stdout.terminalColumns - 8 : 72;
 
   DevWorkflow._(
-    this._client,
-    this._chrome,
-    this.serverManager,
-    //this._extensionBackend
-  ) {
+      this._client, this._chrome, this.serverManager, this._extensionBackend) {
     _resultsSub = _client.buildResults.listen((data) {
       if (data.results.any((result) =>
           result.status == BuildStatus.failed ||
@@ -190,10 +185,13 @@ class DevWorkflow {
     _registerBuildTargets(client, configuration, targetPorts);
     logWriter(logging.Level.INFO, 'Starting initial build...');
     client.startBuild();
+    var extensionBackend = await _startExtensionBackend(configuration);
+    // This port is to be injected by client.js
+    var extensionPort = extensionBackend == null ? 0 : extensionBackend.port;
     var serverManager = await _startServerManager(
-        configuration, targetPorts, workingDirectory, client);
+        configuration, targetPorts, workingDirectory, client, extensionPort);
     var chrome = await _startChrome(configuration, serverManager, client);
-    return DevWorkflow._(client, chrome, serverManager);
+    return DevWorkflow._(client, chrome, serverManager, extensionBackend);
   }
 
   // var devTools = await _startDevTools(configuration);
@@ -210,7 +208,7 @@ class DevWorkflow {
     await _resultsSub?.cancel();
     await _chrome?.close();
     await _client?.close();
-    //await _extensionBackend?.close();
+    await _extensionBackend?.close();
     await serverManager?.stop();
     if (!_doneCompleter.isCompleted) _doneCompleter.complete();
   }
