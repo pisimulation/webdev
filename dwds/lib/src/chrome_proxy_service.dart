@@ -66,6 +66,7 @@ class ChromeProxyService implements VmServiceInterface {
       AssetHandler assetHandler, String appInstanceId) async {
     ChromeTab appTab;
     for (var tab in await chromeConnection.getTabs()) {
+      print("PI: tab url: " + tab.url);
       if (tab.url.startsWith('chrome-extensions:')) continue;
       var tabConnection = await tab.connect();
       var result = await tabConnection.runtime
@@ -114,6 +115,7 @@ class ChromeProxyService implements VmServiceInterface {
   /// with [destroyIsolate] and recreated with this method there is a hot
   /// restart or full page refresh.
   Future<void> createIsolate() async {
+    print("PI: chrome_proxy_service creating isolate, uri = " + uri);
     if (_inspector?.isolate != null) {
       throw UnsupportedError(
           'Cannot create multiple isolates for the same app');

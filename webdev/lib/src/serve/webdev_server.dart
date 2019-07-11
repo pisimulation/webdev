@@ -55,10 +55,10 @@ class WebDevServer {
   }
 
   static Future<WebDevServer> start(
-    ServerOptions options,
-    Stream<BuildResults> buildResults,
-    DevTools devTools,
-  ) async {
+      ServerOptions options,
+      Stream<BuildResults> buildResults,
+      DevTools devTools,
+      int extensionPort) async {
     var assetHandler = AssetHandler(options.daemonPort, options.target,
         options.configuration.hostname, options.port);
     var cascade = Cascade();
@@ -69,7 +69,8 @@ class WebDevServer {
     }
 
     pipeline = pipeline
-        .addMiddleware(createInjectedHandler(options.configuration.reload))
+        .addMiddleware(
+            createInjectedHandler(options.configuration.reload, extensionPort))
         .addMiddleware(interceptFavicon);
 
     var devHandler = DevHandler(

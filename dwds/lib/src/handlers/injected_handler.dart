@@ -24,8 +24,7 @@ const mainExtensionMarker = '/* MAIN_EXTENSION_MARKER */';
 const _clientScript = 'dwds/src/injected/client';
 
 Handler Function(Handler) createInjectedHandler(
-  ReloadConfiguration configuration,
-) =>
+        ReloadConfiguration configuration, int extensionPort) =>
     (innerHandler) {
       return (Request request) async {
         if (request.url.path == '$_clientScript.js') {
@@ -66,7 +65,8 @@ Handler Function(Handler) createInjectedHandler(
                 .replaceAll('(', '')
                 .replaceAll(')', '')
                 .trim();
-            body += _injectedClientJs(configuration, appId, mainFuntion);
+            body += _injectedClientJs(
+                configuration, appId, mainFuntion, extensionPort);
             body += bodyLines.sublist(extensionIndex + 2).join('\n');
             // Change the hot restart handler to re-assign
             // `window.$dartRunMain` to the new main, instead of invoking it.
@@ -85,12 +85,13 @@ Handler Function(Handler) createInjectedHandler(
       };
     };
 
-String _injectedClientJs(
-        ReloadConfiguration configuration, String appId, String mainFunction) =>
+String _injectedClientJs(ReloadConfiguration configuration, String appId,
+        String mainFunction, int extensionPort) =>
     '''\n
 // Injected by webdev for build results support.
 window.\$dartAppId = "$appId";
 window.\$dartRunMain = $mainFunction;
 window.\$dartReloadConfiguration = "$configuration";
 window.\$dartLoader.forceLoadModule('$_clientScript');
+window.\$extensionPort = "$extensionPort";
 ''';

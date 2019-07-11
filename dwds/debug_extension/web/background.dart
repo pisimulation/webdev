@@ -8,6 +8,8 @@ library background;
 import 'package:js/js.dart';
 import 'package:sse/client/sse_client.dart';
 
+// GENERATE:
+// pub run build_runner build web -o build -r
 void main() {
   addListener(allowInterop((e) {
     var query = QueryInfo(active: true, currentWindow: true);

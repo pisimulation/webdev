@@ -10,6 +10,7 @@ import 'package:build_daemon/data/build_status.dart';
 import 'package:build_daemon/data/build_target.dart';
 import 'package:build_daemon/data/server_log.dart';
 import 'package:dwds/src/devtools.dart'; // ignore: implementation_imports
+import 'package:dwds/src/extension_backend.dart'; // ignore: implementation_imports
 import 'package:logging/logging.dart' as logging;
 
 import '../command/configuration.dart';
@@ -64,12 +65,12 @@ Future<Chrome> _startChrome(
 }
 
 Future<ServerManager> _startServerManager(
-  Configuration configuration,
-  Map<String, int> targetPorts,
-  String workingDirectory,
-  BuildDaemonClient client,
-  DevTools devTools,
-) async {
+    Configuration configuration,
+    Map<String, int> targetPorts,
+    String workingDirectory,
+    BuildDaemonClient client,
+    DevTools devTools,
+    int extensionPort) async {
   var assetPort = daemonPort(workingDirectory);
   var serverOptions = Set<ServerOptions>();
   for (var target in targetPorts.keys) {
@@ -81,9 +82,9 @@ Future<ServerManager> _startServerManager(
     ));
   }
   logWriter(logging.Level.INFO, 'Starting resource servers...');
-  var serverManager =
-      await ServerManager.start(serverOptions, client.buildResults, devTools);
-
+  var serverManager = await ServerManager.start(
+      serverOptions, client.buildResults, devTools, extensionPort);
+  print('pi server manager start');
   for (var server in serverManager.servers) {
     logWriter(
         logging.Level.INFO,
@@ -104,6 +105,14 @@ Future<DevTools> _startDevTools(
     return devTools;
   }
   return null;
+}
+
+Future<ExtensionBackend> _startExtensionBackend() async {
+  print('pi starting ext backend');
+  var extension = await ExtensionBackend.start();
+  logWriter(logging.Level.INFO,
+      'Serving debug extension at http://${extension.hostname}:${extension.port}\n');
+  return extension;
 }
 
 void _registerBuildTargets(
@@ -148,6 +157,7 @@ class DevWorkflow {
   final BuildDaemonClient _client;
   final DevTools _devTools;
   final Chrome _chrome;
+  final ExtensionBackend _extensionBackend;
 
   final ServerManager serverManager;
   StreamSubscription _resultsSub;
@@ -158,6 +168,7 @@ class DevWorkflow {
     this._client,
     this._chrome,
     this._devTools,
+    this._extensionBackend,
     this.serverManager,
   ) {
     _resultsSub = _client.buildResults.listen((data) {
@@ -190,10 +201,12 @@ class DevWorkflow {
     logWriter(logging.Level.INFO, 'Starting initial build...');
     client.startBuild();
     var devTools = await _startDevTools(configuration);
-    var serverManager = await _startServerManager(
-        configuration, targetPorts, workingDirectory, client, devTools);
+    var extensionBackend = await _startExtensionBackend();
+    var serverManager = await _startServerManager(configuration, targetPorts,
+        workingDirectory, client, devTools, extensionBackend.port);
     var chrome = await _startChrome(configuration, serverManager, client);
-    return DevWorkflow._(client, chrome, devTools, serverManager);
+    return DevWorkflow._(
+        client, chrome, devTools, extensionBackend, serverManager);
   }
 
   Future<void> shutDown() async {
@@ -201,6 +214,7 @@ class DevWorkflow {
     await _chrome?.close();
     await _client?.close();
     await _devTools?.close();
+    await _extensionBackend?.close();
     await serverManager?.stop();
     if (!_doneCompleter.isCompleted) _doneCompleter.complete();
   }

@@ -67,18 +67,21 @@ class DebugService {
     await _server.close();
   }
 
-  String get wsUri => 'ws://$hostname:$port/$_authToken';
+  String get wsUri =>
+      'ws://$hostname:$port/$_authToken'; // PI: this is where ws uri is created
 
   /// [appInstanceId] is a unique String embedded in the instance of the
   /// application available through `window.$dartAppInstanceId`.
   static Future<DebugService> start(
     String hostname,
-    ChromeConnection chromeConnection,
+    ChromeConnection
+        chromeConnection, //PI: replace this with chrome extension/sse client because this thing assumes open debug port
     Future<String> Function(String) assetHandler,
     String appInstanceId, {
     void Function(Map<String, dynamic>) onRequest,
     void Function(Map<String, dynamic>) onResponse,
   }) async {
+    print('PI: service.dart starting debug service');
     var chromeProxyService = await ChromeProxyService.create(
         chromeConnection, assetHandler, appInstanceId);
     var serviceExtensionRegistry = ServiceExtensionRegistry();
@@ -93,6 +96,7 @@ class DebugService {
       return innerHandler(request);
     };
     var port = await findUnusedPort();
+    print(port); // PI
     var server = hostname == 'localhost'
         ? await HttpMultiServer.loopback(port)
         : await HttpServer.bind(hostname, port);

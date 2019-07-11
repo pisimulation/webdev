@@ -16,12 +16,14 @@ class _CopyBuilder extends Builder {
 
   @override
   void build(BuildStep buildStep) {
-    if (buildStep.inputId != _clientJsId) {
+    if (buildStep.inputId == _clientJsId) {
+      buildStep.writeAsString(
+          _clientJsCopyId, buildStep.readAsString(_clientJsId));
+      return;
+    } else {
       throw StateError(
           'Unexpected input for `CopyBuilder` expected only $_clientJsId');
     }
-    buildStep.writeAsString(
-        _clientJsCopyId, buildStep.readAsString(_clientJsId));
   }
 }
 

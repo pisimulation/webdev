@@ -57,6 +57,7 @@ Future<void> main() async {
       window.alert('Dart DevTools is only supported on Chrome');
       return;
     }
+    print("PI: lauching devTools");
     client.sink.add(jsonEncode(serializers.serialize(DevToolsRequest((b) => b
       ..appId = dartAppId
       ..instanceId = dartAppInstanceId))));

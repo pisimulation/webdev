@@ -10,7 +10,6 @@ targets:
           - web/client.dart
       dwds|client_js_copy_builder:
         enabled: true
-
 builders:
   client_js_copy_builder:
     import: "tool/copy_builder.dart"
