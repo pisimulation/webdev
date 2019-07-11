@@ -24,7 +24,6 @@ class ExtensionBackend {
 
   // Starts the backend on an open port.
   static Future<ExtensionBackend> start() async {
-    print("starting pi ext");
     var server = await io.serve(_sseHandler.handler, 'localhost', 0);
     return ExtensionBackend._(server.address.host, server.port, server);
   }
@@ -33,9 +32,6 @@ class ExtensionBackend {
     await _server.close();
   }
 
-  // Listens to SSE connections.
-  //
-  // Sends a simple message and prints the response when a client connects.
   void _listen() async {
     var connections = _sseHandler.connections;
     while (await connections.hasNext) {
