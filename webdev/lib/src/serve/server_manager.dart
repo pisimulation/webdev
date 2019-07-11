@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:build_daemon/data/build_status.dart';
-import 'package:dwds/src/devtools.dart'; // ignore: implementation_imports
 
 import 'webdev_server.dart';
 
@@ -16,14 +15,14 @@ class ServerManager {
   ServerManager._(this.servers);
 
   static Future<ServerManager> start(
-      Set<ServerOptions> serverOptions,
-      Stream<BuildResults> buildResults,
-      DevTools devTools,
-      int extensionPort) async {
+    Set<ServerOptions> serverOptions,
+    Stream<BuildResults> buildResults,
+    //int extensionPort
+  ) async {
     var servers = Set<WebDevServer>();
     for (var options in serverOptions) {
-      servers.add(await WebDevServer.start(
-          options, buildResults, devTools, extensionPort));
+      servers.add(
+          await WebDevServer.start(options, buildResults)); //, extensionPort));
     }
     return ServerManager._(servers);
   }

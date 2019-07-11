@@ -8,9 +8,9 @@ import 'package:path/path.dart' as p;
 import 'package:source_maps/source_maps.dart';
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart';
 
-import 'chrome_proxy_service.dart';
 import 'dart_uri.dart';
 import 'location.dart';
+import 'services/chrome_proxy_service.dart';
 
 /// The scripts and sourcemaps for the application, both JS and Dart.
 class Sources {
@@ -69,15 +69,17 @@ class Sources {
             dartUri,
           );
           serverPaths.add(dartUri.serverPath);
-          _sourceToLocation
-              .putIfAbsent(dartUri.serverPath, () => Set())
-              .add(location);
-          _scriptIdToLocation
-              .putIfAbsent(script.scriptId, () => Set())
-              .add(location);
+          noteLocation(dartUri.serverPath, location, script.scriptId);
         }
       }
     }
+  }
+
+  /// Add [location] to our lookups for both the Dart and JS scripts.
+  void noteLocation(
+      String dartServerPath, Location location, String wipScriptId) {
+    _sourceToLocation.putIfAbsent(dartServerPath, () => Set()).add(location);
+    _scriptIdToLocation.putIfAbsent(wipScriptId, () => Set()).add(location);
   }
 
   /// Returns the tokenPosTable for the provided Dart script path as defined
