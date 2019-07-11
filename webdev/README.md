@@ -58,8 +58,6 @@ Usage: webdev serve [arguments] [<directory>[:<port>]]...
                                   Option + D). This also enables
                                   --launch-in-chrome.
 
-    --[no-]debug-extension        Enable the debug Chrome extension backend.
-    
 Advanced:
     --chrome-debug-port           Specify which port the Chrome debugger is
                                   listening on. If used with launch-in-chrome
