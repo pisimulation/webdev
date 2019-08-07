@@ -25,8 +25,6 @@ class ExtensionDebugger implements RemoteDebugger {
   final _eventStreams = <String, Stream>{};
   var _completerId = 0;
 
-  String tabUrl;
-  String appId;
   String instanceId;
 
   final _devToolsRequestController = StreamController<DevToolsRequest>();
@@ -35,6 +33,10 @@ class ExtensionDebugger implements RemoteDebugger {
 
   final _notificationController = StreamController<WipEvent>.broadcast();
   Stream<WipEvent> get onNotification => _notificationController.stream;
+
+  final _closeController = StreamController<WipEvent>.broadcast();
+  @override
+  Stream<WipEvent> get onClose => _closeController.stream;
 
   @override
   Stream<ConsoleAPIEvent> get onConsoleAPICalled => eventStream(
@@ -66,14 +68,12 @@ class ExtensionDebugger implements RemoteDebugger {
         };
         _notificationController.sink.add(WipEvent(map));
       } else if (message is DevToolsRequest) {
-        tabUrl = message.tabUrl;
-        appId = message.appId;
         instanceId = message.instanceId;
         _devToolsRequestController.sink.add(message);
       }
     }, onError: (_) {
       close();
-    });
+    }, onDone: close);
     onScriptParsed.listen((event) {
       _scripts[event.script.scriptId] = event.script;
     });
@@ -103,9 +103,11 @@ class ExtensionDebugger implements RemoteDebugger {
 
   @override
   void close() {
+    _closeController.add(WipEvent({}));
     sseConnection.sink.close();
     _notificationController.close();
     _devToolsRequestController.close();
+    _closeController.close();
   }
 
   @override
@@ -177,9 +179,6 @@ class ExtensionDebugger implements RemoteDebugger {
 
   @override
   Map<String, WipScript> get scripts => UnmodifiableMapView(_scripts);
-
-  @override
-  Stream<WipConnection> get onClose => throw UnimplementedError();
 
   String _pauseStateToString(PauseState state) {
     switch (state) {

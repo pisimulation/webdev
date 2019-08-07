@@ -74,11 +74,23 @@ Future<void> startSseClient(
       allowInterop((e) {}));
 
   // Notifies the backend of debugger events.
+  //
+  // The listener of the `currentTab` receives events from all tabs.
+  // We want to forward an event only if it originates from `currentTab`.
+  // We know that if `source.tabId` and `currentTab.id` are the same.
   addDebuggerListener(
       allowInterop((Debuggee source, String method, Object params) {
-    client.sink.add(jsonEncode(serializers.serialize(ExtensionEvent((b) => b
-      ..params = jsonEncode(json.decode(stringify(params)))
-      ..method = jsonEncode(method)))));
+    if (source.tabId == currentTab.id) {
+      client.sink.add(jsonEncode(serializers.serialize(ExtensionEvent((b) => b
+        ..params = jsonEncode(json.decode(stringify(params)))
+        ..method = jsonEncode(method)))));
+    }
+  }));
+
+  onRemovedAddListener(allowInterop((int tabId, RemoveInfo removeInfo) {
+    if (tabId == currentTab.id) {
+      client.close();
+    }
   }));
 
   client.stream.listen((data) {
@@ -120,6 +132,9 @@ external dynamic addDebuggerListener(Function callback);
 @JS('chrome.tabs.query')
 external List<Tab> queryTabs(QueryInfo queryInfo, Function callback);
 
+@JS('chrome.tabs.onRemoved.addListener')
+external void onRemovedAddListener(Function callback);
+
 @JS('JSON.stringify')
 external String stringify(o);
 
@@ -132,6 +147,13 @@ class QueryInfo {
   external bool get active;
   external bool get currentWindow;
   external factory QueryInfo({bool active, bool currentWindow});
+}
+
+@JS()
+@anonymous
+class RemoveInfo {
+  external int get windowId;
+  external bool get isWindowClosing;
 }
 
 @JS()

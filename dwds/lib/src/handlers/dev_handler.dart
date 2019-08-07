@@ -59,7 +59,7 @@ class DevHandler {
     _sub = buildResults.listen(_emitBuildResults);
     _listen();
     if (_extensionBackend != null) {
-      _startExtensionDebugService();
+      _listenForDebugExtension();
     }
   }
 
@@ -282,33 +282,53 @@ class DevHandler {
     return AppDebugServices(debugService, webdevClient);
   }
 
+  void _listenForDebugExtension() async {
+    while (await _extensionBackend.connections.hasNext) {
+      _startExtensionDebugService();
+    }
+  }
+
   /// Starts a [DebugService] for Dart Debug Extension.
   void _startExtensionDebugService() async {
     var _extensionDebugger = await _extensionBackend.extensionDebugger;
     // Waits for a `DevToolsRequest` to be sent from the extension background
     // when the extension is clicked.
-    // TODO(pisong): Handle multiple `devToolsRequest`.
-    await _extensionDebugger.devToolsRequestStream.first;
-    var debugService = await DebugService.start(
-      _hostname,
-      _extensionDebugger,
-      _extensionDebugger.tabUrl,
-      _assetHandler.getRelativeAsset,
-      _extensionDebugger.appId,
-      onResponse: _verbose
-          ? (response) {
-              if (response['error'] == null) return;
-              _logWriter(Level.WARNING,
-                  'VmService proxy responded with an error:\n$response');
-            }
-          : null,
-    );
-    var appServices =
-        await _createAppDebugServices(_extensionDebugger.appId, debugService);
-    await _extensionDebugger.sendCommand('Target.createTarget', params: {
-      'newWindow': true,
-      'url': 'http://${_devTools.hostname}:${_devTools.port}'
-          '/?hide=none&uri=${appServices.debugService.uri}',
+    _extensionDebugger.devToolsRequestStream.listen((devToolsRequest) async {
+      var appServices =
+          await _servicesByAppId.putIfAbsent(devToolsRequest.appId, () async {
+        var debugService = await DebugService.start(
+          _hostname,
+          _extensionDebugger,
+          devToolsRequest.tabUrl,
+          _assetHandler.getRelativeAsset,
+          devToolsRequest.appId,
+          onResponse: _verbose
+              ? (response) {
+                  if (response['error'] == null) return;
+                  _logWriter(Level.WARNING,
+                      'VmService proxy responded with an error:\n$response');
+                }
+              : null,
+        );
+        var appServices =
+            await _createAppDebugServices(devToolsRequest.appId, debugService);
+        unawaited(appServices.chromeProxyService.remoteDebugger.onClose.first
+            .whenComplete(() {
+          appServices.chromeProxyService.destroyIsolate();
+          appServices.close();
+          _servicesByAppId.remove(devToolsRequest.appId);
+          _logWriter(
+              Level.INFO,
+              'Stopped debug service on '
+              'ws://${appServices.debugService.hostname}:${appServices.debugService.port}\n');
+        }));
+        return appServices;
+      });
+      await _extensionDebugger.sendCommand('Target.createTarget', params: {
+        'newWindow': true,
+        'url': 'http://${_devTools.hostname}:${_devTools.port}'
+            '/?hide=none&uri=${appServices.debugService.uri}',
+      });
     });
   }
 }
