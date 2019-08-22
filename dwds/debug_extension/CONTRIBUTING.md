@@ -1,11 +1,16 @@
 ## Building
 
-- Build with dart2js:
+- With dart2js:
 
 ```
 pub run build_runner build web -o build -r
 ```
 
+- With DDC:
+
+```
+pub run build_runner build web -o build
+```
 
 ## Deployment
 
