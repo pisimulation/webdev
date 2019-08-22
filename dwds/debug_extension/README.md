@@ -6,4 +6,4 @@ The extension is available on [Chrome Web Store](https://chrome.google.com/webst
 
 ## Usage
 
-The extension requires disabling `Throttle expensive background timers` flag in [chrome://flags](chrome://flags).
+The extension requires disabling `Throttle expensive background timers` [Chrome flag](chrome://flags/#expensive-background-timer-throttling).
