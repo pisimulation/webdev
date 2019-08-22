@@ -1,9 +1,10 @@
 A Chrome extension for enabling Dart application debugging over an SSE connection with package:dwds.
 
+This repository does not host the Chrome extension. `web/manifest.json` and `web/background.js` are zipped and uploaded to the web store.
+
 ## Installation
 
 The extension is available on [Chrome Web Store](https://chrome.google.com/webstore/detail/dart-debug-extension/eljbmlghnomdjgdjmbdekegdkbabckhm).
-`web/manifest.json` and `web/background.js` in this repository are zipped and uploaded to the web store.
 
 ## Usage
 
